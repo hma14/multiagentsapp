@@ -1,0 +1,6 @@
+CREATE TABLE PromptResult (
+    Id INT IDENTITY(1,1) PRIMARY KEY,
+    Prompt NVARCHAR(MAX),
+    Results NVARCHAR(MAX),
+    CreatedAt DATETIME DEFAULT GETDATE()
+);

@@ -1,0 +1,30 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Python: main.py",
+      "type": "debugpy",
+      "request": "launch",
+      "program": "${workspaceFolder}/backend/.venv/Scripts/uvicorn.exe",
+      "args": ["main:app", "--reload", "--host", "0.0.0.0", "--port", "8000"],
+      "cwd": "${workspaceFolder}/backend/app",
+      "console": "integratedTerminal",
+      "justMyCode": true
+    },
+    {
+      "name": "React: Frontend",
+      "type": "msedge",
+      "request": "launch",
+      "url": "http://localhost:3000",
+      "webRoot": "${workspaceFolder}/frontend/react_app/src",
+      "sourceMaps": true,
+      "trace": true
+    }
+  ],
+  "compounds": [
+    {
+      "name": "Debug Both Frontend and Backend",
+      "configurations": ["Python: main.py", "React: Frontend"]
+    }
+  ]
+}
