@@ -16,6 +16,8 @@ import {
   AccordionDetails,
 } from "@mui/material";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
+import dayjs from "dayjs";
+import CircularProgress from "@mui/material/CircularProgress";
 
 const url = "http://localhost:8000";
 //const url = "http://agent-back.lottotry.com:8000";
@@ -23,12 +25,15 @@ const url = "http://localhost:8000";
 function App() {
   const [prompt, setPrompt] = useState("");
   const [results, setResults] = useState([]);
+  const [isLoading, setIsLoading] = useState(false);
 
   const submitPrompt = async () => {
+    setIsLoading(true);
     const res = await axios.post(`${url}/api/query`, null, {
       params: { prompt },
     });
-    setResults([...results, res.data]);
+    setResults([res.data, ...results]);
+    setIsLoading(false);
   };
 
   useEffect(() => {
@@ -83,24 +88,43 @@ function App() {
             alignItems: "right",
           }}
           onClick={submitPrompt}
+          disabled={isLoading}
         >
-          Run Agents
+          {isLoading ? (
+            <div className="loader-container">
+              <CircularProgress size={100} />
+            </div>
+          ) : (
+            "Run Agents"
+          )}
         </Button>
       </Box>
 
       {results.map((r) => (
         <Card key={r.id} sx={{ mt: 3 }}>
           <CardContent>
-            <Typography variant="h6" sx={{ mt: 0, color: "green" }}>
-              Prompt
-            </Typography>
-            <Typography>{r.prompt}</Typography>
-            <Typography variant="h6" sx={{ mt: 5, color: "green" }}>
-              Results
-            </Typography>
-            <ReactMarkdown remarkPlugins={[remarkGfm]}>
-              {r.results}
-            </ReactMarkdown>
+            <Accordion>
+              <AccordionSummary expandIcon={<ExpandMoreIcon />}>
+                <Typography sx={{ fontWeight: "bold", color: "green" }}>
+                  {r.prompt}
+                  <Typography
+                    variant="caption"
+                    sx={{
+                      ml: 2,
+                      fontFamily: "-moz-initial",
+                      color: "ActiveCaption",
+                    }}
+                  >
+                    {dayjs(r.createdAt).format("MMM D, YYYY • h:mm A")}
+                  </Typography>
+                </Typography>
+              </AccordionSummary>
+              <AccordionDetails>
+                <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                  {r.results}
+                </ReactMarkdown>
+              </AccordionDetails>
+            </Accordion>
           </CardContent>
         </Card>
       ))}

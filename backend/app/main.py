@@ -5,6 +5,7 @@ from db.session import engine, get_session
 from agents.agent_manager import run_agents
 from fastapi.middleware.cors import CORSMiddleware
 from agents.ai_agents.ai_agent_search import run_chatbot
+from contextlib import asynccontextmanager
 
 app = FastAPI()
 
@@ -17,10 +18,15 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Create DB tables on startup
-@app.on_event("startup")
-def on_startup():
+# Create DB tables on startup    
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # Startup code
     SQLModel.metadata.create_all(engine)
+    print("Database tables created")
+    yield
+    # Optional shutdown code
+    print("App shutting down")
 
 @app.post("/api/query")
 def query_agents(prompt: str, session: Session = Depends(get_session)):
@@ -36,6 +42,8 @@ def query_agents(prompt: str, session: Session = Depends(get_session)):
 
 @app.get("/api/results")
 def get_results(session: Session = Depends(get_session)):
-    results = session.exec(select(PromptResult)).all()
+    results = session.exec(
+        select(PromptResult).order_by(PromptResult.createdAt.desc())
+        ).all()
     return [r.model_dump() for r in results]
 
