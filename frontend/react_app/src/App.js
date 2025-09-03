@@ -18,6 +18,7 @@ import {
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import dayjs from "dayjs";
 import CircularProgress from "@mui/material/CircularProgress";
+import "./App.css";
 
 //const url = "http://localhost:8000";
 const url = "http://agent-back.lottotry.com:8000";
@@ -42,6 +43,13 @@ function App() {
 
   return (
     <Container maxWidth="md">
+      {isLoading ? (
+        <div className="loader-container">
+          <CircularProgress size={100} />
+        </div>
+      ) : (
+        ""
+      )}
       <Box
         sx={{
           display: "flex",
@@ -90,13 +98,7 @@ function App() {
           onClick={submitPrompt}
           disabled={isLoading}
         >
-          {isLoading ? (
-            <div className="loader-container">
-              <CircularProgress size={100} />
-            </div>
-          ) : (
-            "Run Agents"
-          )}
+          Run Agents
         </Button>
       </Box>
 
