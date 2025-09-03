@@ -11,12 +11,15 @@ import {
   Typography,
 } from "@mui/material";
 
+//const url = "http://localhost:8000"
+const url = "http://agent-back.lottotry.com:8000"
+
 function App() {
   const [prompt, setPrompt] = useState("");
   const [results, setResults] = useState([]);
 
   const submitPrompt = async () => {
-    const res = await axios.post("http://localhost:8000/api/query", null, {
+    const res = await axios.post("http://agent-back.lottotry.com:8000/api/query", null, {
       params: { prompt },
     });
     setResults([...results, res.data]);
@@ -24,7 +27,7 @@ function App() {
 
   useEffect(() => {
     axios
-      .get("http://localhost:8000/api/results")
+      .get("http://agent-back.lottotry.com:8000/api/results")
       .then((res) => setResults(res.data));
   }, []);
 
