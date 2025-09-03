@@ -1,6 +1,7 @@
 {
   "dependencies": {
     "remark-gfm": "^4.0.1",
+    "uv": "^1.4.0",
     "uvicorn": "^0.0.1-security"
   }
 }
