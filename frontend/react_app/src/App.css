@@ -37,28 +37,15 @@
   }
 }
 
-.loader-container-1 {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  height: 100vh;
-}
-
 .loader-container {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-
-  position: fixed; /* Keeps the loader fixed in the viewport */
+  position: fixed; /* make it relative to viewport */
   top: 0;
   left: 0;
-  width: 100vw; /* Full viewport width */
-  height: 100vh; /* Full viewport height */
-  z-index: 9999; /* Ensures the loader is on top of other content */
-  background-color: rgba(
-    0,
-    0,
-    0,
-    0.5
-  ); /* Optional: Semi-transparent background */
+  width: 100vw; /* full viewport width */
+  height: 100vh; /* full viewport height */
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background-color: rgba(255, 255, 255, 0.8); /* optional overlay */
+  z-index: 9999; /* on top of everything */
 }
