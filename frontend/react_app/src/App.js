@@ -56,8 +56,9 @@ function App() {
           alignItems: "center",
         }}
       >
+        {/*
         <SpinningLogo />
-        <Typography
+         <Typography
           variant="h4"
           sx={{
             mt: 2,
@@ -69,27 +70,29 @@ function App() {
           }}
         >
           Search by Agents
-        </Typography>
+        </Typography> */}
+
+        <SpinningLogo />
+        <TextField
+          fullWidth
+          label="Enter your prompt"
+          value={prompt}
+          sx={{
+            mt: 2,
+            "& .MuiOutlinedInput-root": {
+              borderRadius: "20px", // round the input box
+            },
+          }}
+          onChange={(e) => setPrompt(e.target.value)}
+        />
       </Box>
-      <TextField
-        fullWidth
-        label="Enter your prompt"
-        value={prompt}
-        sx={{
-          mt: 2,
-          "& .MuiOutlinedInput-root": {
-            borderRadius: "20px", // round the input box
-          },
-        }}
-        onChange={(e) => setPrompt(e.target.value)}
-      />
       <Box sx={{ display: "flex", justifyContent: "flex-end" }}>
         <Button
           variant="contained"
           alignItems="right"
           sx={{
             mt: 2,
-            borderRadius: "50px", // fully rounded pill style
+            borderRadius: "5px", // fully rounded pill style
             backgroundColor: "primary",
             fontSize: 12,
             display: "flex",
