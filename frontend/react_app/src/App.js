@@ -20,8 +20,8 @@ import dayjs from "dayjs";
 import CircularProgress from "@mui/material/CircularProgress";
 import "./App.css";
 
-const url = "http://localhost:8000";
-//const url = "http://agent-back.lottotry.com:8000";
+//const url = "http://localhost:8000";
+const url = "http://agent-back.lottotry.com:8000";
 
 function App() {
   const [prompt, setPrompt] = useState("");
