@@ -10,7 +10,7 @@ load_dotenv()
 def poll_snapshot_status(
     snapshot_id: str, max_attempts: int = 60, delay: int = 5
 ) -> bool:
-    api_key = os.getenv("BRIGHTDATA_API_KEY")
+    api_key = os.getenv("BRIGHTDATA_TOKEN")
     progress_url = f"https://api.brightdata.com/datasets/v3/progress/{snapshot_id}"
     headers = {"Authorization": f"Bearer {api_key}"}
 
@@ -50,7 +50,7 @@ def poll_snapshot_status(
 def download_snapshot(
     snapshot_id: str, format: str = "json"
 ) -> Optional[List[Dict[Any, Any]]]:
-    api_key = os.getenv("BRIGHTDATA_API_KEY")
+    api_key = os.getenv("BRIGHTDATA_TOKEN")
     download_url = (
         f"https://api.brightdata.com/datasets/v3/snapshot/{snapshot_id}?format={format}"
     )

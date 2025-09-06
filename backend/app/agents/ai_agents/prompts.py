@@ -71,6 +71,28 @@ Bing Search Results: {bing_results}
 Please analyze these Bing results and extract insights that complement other search sources."""
 
     @staticmethod
+    def baidu_analysis_system() -> str:
+        """System prompt for analyzing Baidu search results."""
+        return """You are an expert research analyst. Analyze the provided Baidu search results to extract complementary insights that answer the user's question.
+
+Focus on:
+- Additional perspectives not covered in other sources
+- Technical details and documentation
+- News articles and recent developments
+- Microsoft ecosystem and enterprise perspectives
+
+Provide a concise analysis highlighting unique findings and perspectives."""
+
+    @staticmethod
+    def baidu_analysis_user(user_question: str, baidu_results: str) -> str:
+        """User prompt for analyzing Baidu search results."""
+        return f"""Question: {user_question}
+
+Baidu Search Results: {baidu_results}
+
+Please analyze these Baidu results and extract insights that complement other search sources."""
+
+    @staticmethod
     def reddit_analysis_system() -> str:
         """System prompt for analyzing Reddit discussions."""
         return """You are an expert at analyzing social media discussions. Analyze the provided Reddit content to extract community insights and user experiences.
@@ -118,6 +140,7 @@ Create a comprehensive answer that addresses the user's question from multiple a
         user_question: str,
         google_analysis: str,
         bing_analysis: str,
+        baidu_analysis: str,
         reddit_analysis: str,
     ) -> str:
         """User prompt for synthesizing all analyses."""
@@ -126,6 +149,8 @@ Create a comprehensive answer that addresses the user's question from multiple a
 Google Analysis: {google_analysis}
 
 Bing Analysis: {bing_analysis}
+
+Baidu Analysis: {baidu_analysis}
 
 Reddit Community Analysis: {reddit_analysis}
 
@@ -178,6 +203,15 @@ def get_bing_analysis_messages(
         PromptTemplates.bing_analysis_system(),
         PromptTemplates.bing_analysis_user(user_question, bing_results),
     )
+    
+def get_baidu_analysis_messages(
+    user_question: str, baidu_results: str
+) -> list[Dict[str, Any]]:
+    """Get messages for Baidu results analysis."""
+    return create_message_pair(
+        PromptTemplates.baidu_analysis_system(),
+        PromptTemplates.baidu_analysis_user(user_question, baidu_results),
+    )
 
 
 def get_reddit_analysis_messages(
@@ -193,12 +227,12 @@ def get_reddit_analysis_messages(
 
 
 def get_synthesis_messages(
-    user_question: str, google_analysis: str, bing_analysis: str, reddit_analysis: str
+    user_question: str, google_analysis: str, bing_analysis: str, baidu_analysis: str, reddit_analysis: str
 ) -> list[Dict[str, Any]]:
     """Get messages for final synthesis."""
     return create_message_pair(
         PromptTemplates.synthesis_system(),
         PromptTemplates.synthesis_user(
-            user_question, google_analysis, bing_analysis, reddit_analysis
+            user_question, google_analysis, bing_analysis, baidu_analysis, reddit_analysis
         ),
     )
