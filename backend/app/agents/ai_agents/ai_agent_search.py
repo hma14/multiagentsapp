@@ -12,6 +12,7 @@ from .prompts import (
     get_reddit_analysis_messages, 
     get_google_analysis_messages,
     get_bing_analysis_messages,
+    get_baidu_analysis_messages,
     get_reddit_url_analysis_messages,
     get_synthesis_messages
 )
@@ -33,11 +34,13 @@ class State(TypedDict):
     user_question: str | None
     google_results: str | None
     bing_results: str | None
+    baidu_results: str | None
     reddit_results: str | None
     selected_reddit_urls: list[str] | None
     reddit_post_data: list | None
     google_analysis: str | None
     bing_analysis: str | None
+    baidu_analysis: str | None
     reddit_analysis: str | None
     final_answer: str | None
 
@@ -62,6 +65,14 @@ def bing_search(state: State):
     bing_results = serp_search(user_question, engine="bing")
 
     return {"bing_results": bing_results}
+
+def baidu_search(state: State):
+    user_question = state.get("user_question", "")
+    print(f"Searching Baidu for: {user_question}")
+
+    baidu_results = serp_search(user_question, engine="baidu")
+
+    return {"baidu_results": baidu_results}
 
 
 def reddit_search(state: State):
@@ -144,6 +155,17 @@ def analyze_bing_results(state: State):
 
     return {"bing_analysis": reply.content}
 
+def analyze_baidu_results(state: State):
+    print("Analyzing baidu search results")
+
+    user_question = state.get("user_question", "")
+    baidu_results = state.get("baidu_results", "")
+
+    messages = get_baidu_analysis_messages(user_question, baidu_results)
+    reply = llm.invoke(messages)
+
+    return {"baidu_analysis": reply.content}
+
 
 def analyze_reddit_results(state: State):
     print("Analyzing reddit search results")
@@ -164,10 +186,11 @@ def synthesize_analyses(state: State):
     user_question = state.get("user_question", "")
     google_analysis = state.get("google_analysis", "")
     bing_analysis = state.get("bing_analysis", "")
+    baidu_analysis = state.get("baidu_analysis", "")
     reddit_analysis = state.get("reddit_analysis", "")
 
     messages = get_synthesis_messages(
-        user_question, google_analysis, bing_analysis, reddit_analysis
+        user_question, google_analysis, bing_analysis, baidu_analysis, reddit_analysis
     )
 
     reply = llm.invoke(messages)
@@ -180,29 +203,35 @@ graph_builder = StateGraph(State)
 
 graph_builder.add_node("google_search", google_search)
 graph_builder.add_node("bing_search", bing_search)
+graph_builder.add_node("baidu_search", baidu_search)
 graph_builder.add_node("reddit_search", reddit_search)
 graph_builder.add_node("analyze_reddit_posts", analyze_reddit_posts)
 graph_builder.add_node("retrieve_reddit_posts", retrieve_reddit_posts)
 graph_builder.add_node("analyze_google_results", analyze_google_results)
 graph_builder.add_node("analyze_bing_results", analyze_bing_results)
+graph_builder.add_node("analyze_baidu_results", analyze_baidu_results)
 graph_builder.add_node("analyze_reddit_results", analyze_reddit_results)
 graph_builder.add_node("synthesize_analyses", synthesize_analyses)
 
 graph_builder.add_edge(START, "google_search")
 graph_builder.add_edge(START, "bing_search")
+graph_builder.add_edge(START, "baidu_search")
 graph_builder.add_edge(START, "reddit_search")
 
 graph_builder.add_edge("google_search", "analyze_reddit_posts")
 graph_builder.add_edge("bing_search", "analyze_reddit_posts")
+graph_builder.add_edge("baidu_search", "analyze_reddit_posts")
 graph_builder.add_edge("reddit_search", "analyze_reddit_posts")
 graph_builder.add_edge("analyze_reddit_posts", "retrieve_reddit_posts")
 
 graph_builder.add_edge("retrieve_reddit_posts", "analyze_google_results")
 graph_builder.add_edge("retrieve_reddit_posts", "analyze_bing_results")
+graph_builder.add_edge("retrieve_reddit_posts", "analyze_baidu_results")
 graph_builder.add_edge("retrieve_reddit_posts", "analyze_reddit_results")
 
 graph_builder.add_edge("analyze_google_results", "synthesize_analyses")
 graph_builder.add_edge("analyze_bing_results", "synthesize_analyses")
+graph_builder.add_edge("analyze_baidu_results", "synthesize_analyses")
 graph_builder.add_edge("analyze_reddit_results", "synthesize_analyses")
 
 graph_builder.add_edge("synthesize_analyses", END)

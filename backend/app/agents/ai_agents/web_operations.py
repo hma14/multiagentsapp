@@ -3,13 +3,14 @@ import os
 import requests
 from urllib.parse import quote_plus
 from .snapshot_operations import download_snapshot, poll_snapshot_status
+from bs4 import BeautifulSoup
 
 load_dotenv()
 
 dataset_id = "gd_lvz8ah06191smkebj4"
 
-def _make_api_request(url, **kwargs):
-    api_key = os.getenv("BRIGHTDATA_API_KEY")
+def _make_api_request(url, engine, **kwargs):
+    api_key = os.getenv("BRIGHTDATA_TOKEN")
 
     headers = {
         "Authorization": f"Bearer {api_key}",
@@ -19,7 +20,7 @@ def _make_api_request(url, **kwargs):
     try:
         response = requests.post(url, headers=headers, **kwargs)
         response.raise_for_status()
-        return response.json()
+        return response.text if engine == "baidu" else response.json()        
     except requests.exceptions.RequestException as e:
         print(f"API request failed: {e}")
         return None
@@ -31,32 +32,47 @@ def _make_api_request(url, **kwargs):
 def serp_search(query, engine="google"):
     if engine == "google":
         base_url = "https://www.google.com/search"
+        query_param = "q"
     elif engine == "bing":
         base_url = "https://www.bing.com/search"
+        query_param = "q"
+    elif engine == "baidu":
+        base_url = "https://www.baidu.com/s"
+        query_param = "wd"
     else:
         raise ValueError(f"Unknown engine {engine}")
 
     url = "https://api.brightdata.com/request"
+    
+    if engine in ["google", "bing"]:
+        url_with_query = f"{base_url}?{query_param}={quote_plus(query)}&brd_json=1"
+        payload = {"zone": "ai_agent", "url": url_with_query, "format": "raw"}
+    elif engine == "baidu":
+        url_with_query = f"{base_url}?{query_param}={quote_plus(query)}"
+        payload = {"zone": "ai_agent", "url": url_with_query, "format": "raw"}
 
-    payload = {
-        "zone": "ai_agent",
-        "url": f"{base_url}?q={quote_plus(query)}&brd_json=1",
-        "format": "raw"
-    }
-
-    full_response = _make_api_request(url, json=payload)
+    full_response = _make_api_request(url, engine, json=payload)
     if not full_response:
         return None
 
-    extracted_data = {
+    # Special case for Baidu → parse HTML
+    if engine == "baidu":
+        soup = BeautifulSoup(full_response, "html.parser")
+        results = []
+        for item in soup.select("h3 a"):   # Baidu SERP titles are usually inside <h3><a>
+            title = item.get_text(strip=True)
+            link = item.get("href")
+            results.append({"title": title, "url": link})
+        return {"organic": results, "knowledge": {}}
+    
+    return {
         "knowledge": full_response.get("knowledge", {}),
         "organic": full_response.get("organic", []),
     }
-    return extracted_data
 
 
 def _trigger_and_download_snapshot(trigger_url, params, data, operation_name="operation"):
-    trigger_result = _make_api_request(trigger_url, params=params, json=data)
+    trigger_result = _make_api_request(trigger_url, engine=None, params=params, json=data)
     if not trigger_result:
         return None
 
@@ -161,8 +177,8 @@ def reddit_post_retrieval(urls, days_back=10, load_all_replies=False, comment_li
 
     trigger_url = "https://api.brightdata.com/datasets/v3/trigger"
 
-    API_TOKEN = os.getenv("BRIGHTDATA_API_KEY")
-    dataset_name = "Booking"  # whatever you named it in Bright Data
+    API_TOKEN = os.getenv("BRIGHTDATA_TOKEN")
+    dataset_name = "Reddit"  # whatever you named it in Bright Data
 
     if dataset_id := get_dataset_id(API_TOKEN, dataset_name):
         print(f"Dataset ID for '{dataset_name}': {dataset_id}")

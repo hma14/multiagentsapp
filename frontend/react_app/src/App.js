@@ -101,7 +101,7 @@ function App() {
           onClick={submitPrompt}
           disabled={isLoading}
         >
-          Run Agents
+          Submit
         </Button>
       </Box>
 
