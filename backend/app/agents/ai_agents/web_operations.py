@@ -28,6 +28,19 @@ def _make_api_request(url, engine, **kwargs):
         print(f"Unknown error: {e}")
         return None
 
+def parse_baidu_html(html):
+    soup = BeautifulSoup(html, "html.parser")
+    results = []
+    for item in soup.select(".result"):  # Baidu SERPs usually use .result class
+        title_tag = item.select_one("h3 a")
+        snippet_tag = item.select_one(".c-abstract")
+        if title_tag:
+            results.append({
+                "title": title_tag.get_text(strip=True),
+                "url": title_tag.get("href"),
+                "snippet": snippet_tag.get_text(strip=True) if snippet_tag else ""
+            })
+    return results
 
 def serp_search(query, engine="google"):
     if engine == "google":
@@ -57,12 +70,7 @@ def serp_search(query, engine="google"):
 
     # Special case for Baidu → parse HTML
     if engine == "baidu":
-        soup = BeautifulSoup(full_response, "html.parser")
-        results = []
-        for item in soup.select("h3 a"):   # Baidu SERP titles are usually inside <h3><a>
-            title = item.get_text(strip=True)
-            link = item.get("href")
-            results.append({"title": title, "url": link})
+        results = parse_baidu_html(full_response)
         return {"organic": results, "knowledge": {}}
     
     return {
