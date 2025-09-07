@@ -14,32 +14,57 @@ import {
   Accordion,
   AccordionSummary,
   AccordionDetails,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
+  TablePagination,
+  Pagination,
+  Paper,
+  CircularProgress,
 } from "@mui/material";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import dayjs from "dayjs";
-import CircularProgress from "@mui/material/CircularProgress";
 import "./App.css";
 
-//const url = "http://localhost:8000";
-const url = "http://agent-back.lottotry.com:8000";
+const url = "http://localhost:8000";
+//const url = "http://agent-back.lottotry.com:8000";
 
 function App() {
   const [prompt, setPrompt] = useState("");
   const [results, setResults] = useState([]);
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoading, setLoading] = useState(false);
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(0);
 
   const submitPrompt = async () => {
-    setIsLoading(true);
+    setLoading(true);
     const res = await axios.post(`${url}/api/query`, null, {
       params: { prompt },
     });
     setResults([res.data, ...results]);
-    setIsLoading(false);
+    setLoading(false);
   };
 
+  const pageSize = 5;
+
   useEffect(() => {
-    axios.get(`${url}/api/results`).then((res) => setResults(res.data));
-  }, []);
+    const fetchResults = async () => {
+      setLoading(true);
+      try {
+        const res = await axios.get(`${url}/api/results`, {
+          params: { page, page_size: pageSize }, // backend expects 1-based
+        });
+        setResults(res.data.results);
+        setTotalPages(Math.ceil(res.data.total / pageSize));
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchResults();
+  }, [page]);
 
   return (
     <Container maxWidth="md">
@@ -133,6 +158,14 @@ function App() {
           </CardContent>
         </Card>
       ))}
+
+      <Pagination
+        count={totalPages}
+        page={page}
+        onChange={(e, value) => setPage(value)}
+        color="primary"
+        sx={{ display: "flex", justifyContent: "center", mt: 2 }}
+      />
     </Container>
   );
 }

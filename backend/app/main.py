@@ -41,9 +41,23 @@ def query_agents(prompt: str, session: Session = Depends(get_session)):
     return record
 
 @app.get("/api/results")
-def get_results(session: Session = Depends(get_session)):
-    results = session.exec(
-        select(PromptResult).order_by(PromptResult.createdAt.desc())
-        ).all()
-    return [r.model_dump() for r in results]
+def get_results(session: Session = Depends(get_session), page: int = 1, page_size: int = 10):
+    offset = (page - 1) * page_size
+    
+    statement = (
+        select(PromptResult)
+        .order_by(PromptResult.createdAt.desc())
+        .offset(offset)
+        .limit(page_size)
+    )
+    results = session.exec(statement).all()
+    
+    # total count query
+    from sqlalchemy import func
+    total = session.exec(select(func.count()).select_from(PromptResult)).one()
+
+    return {
+        "results": [r.model_dump() for r in results],
+        "total": total,
+    }
 
