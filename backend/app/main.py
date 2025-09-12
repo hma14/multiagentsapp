@@ -1,4 +1,4 @@
-from fastapi import FastAPI, Depends
+from fastapi import FastAPI, Depends, Query
 from sqlmodel import Session, select
 from db.models import PromptResult, SQLModel
 from db.session import engine, get_session
@@ -41,13 +41,15 @@ def query_agents(prompt: str, session: Session = Depends(get_session)):
     return record
 
 @app.get("/api/results")
-def get_results(session: Session = Depends(get_session), page: int = 1, page_size: int = 10):
+def get_results(page: int = Query(1, ge=1),
+                page_size: int = Query(10, ge=1, le=100),
+                session: Session = Depends(get_session)):
     offset = (page - 1) * page_size
     
     statement = (
         select(PromptResult)
         .order_by(PromptResult.createdAt.desc())
-        .offset(offset)
+        .offset((page - 1) * page_size)
         .limit(page_size)
     )
     results = session.exec(statement).all()
@@ -55,9 +57,14 @@ def get_results(session: Session = Depends(get_session), page: int = 1, page_siz
     # total count query
     from sqlalchemy import func
     total = session.exec(select(func.count()).select_from(PromptResult)).one()
+    
+    total_pages = (total + page_size - 1) // page_size  # integer ceil
 
     return {
         "results": [r.model_dump() for r in results],
         "total": total,
+        "page": page,
+        "page_size": page_size,
+        "total_pages": total_pages
     }
 

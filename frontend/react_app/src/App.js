@@ -58,13 +58,13 @@ function App() {
           params: { page, page_size: pageSize }, // backend expects 1-based
         });
         setResults(res.data.results);
-        setTotalPages(Math.ceil(res.data.total / pageSize));
+        setTotalPages(res.data.total_pages);
       } finally {
         setLoading(false);
       }
     };
     fetchResults();
-  }, [page]);
+  }, [page, pageSize]);
 
   return (
     <Container maxWidth="md">
