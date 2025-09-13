@@ -29,8 +29,8 @@ async def lifespan(app: FastAPI):
     print("App shutting down")
 
 @app.post("/api/query")
-def query_agents(prompt: str, session: Session = Depends(get_session)):
-    results =  run_chatbot(prompt) 
+async def query_agents(prompt: str, session: Session = Depends(get_session)):
+    results =  await run_chatbot(prompt) 
     #results =  run_agents(prompt)  # multi-agent logic
     if results is None:
         return results

@@ -9,7 +9,7 @@ load_dotenv()
 
 dataset_id = "gd_lvz8ah06191smkebj4"
 
-def _make_api_request(url, engine, **kwargs):
+async def _make_api_request(url, engine, **kwargs):
     api_key = os.getenv("BRIGHTDATA_TOKEN")
 
     headers = {
@@ -18,7 +18,7 @@ def _make_api_request(url, engine, **kwargs):
     }
 
     try:
-        response = requests.post(url, headers=headers, **kwargs)
+        response = await requests.post(url, headers=headers, **kwargs)
         response.raise_for_status()
         return response.text if engine == "baidu" else response.json()        
     except requests.exceptions.RequestException as e:
@@ -42,7 +42,7 @@ def parse_baidu_html(html):
             })
     return results
 
-def serp_search(query, engine="google"):
+async def serp_search(query, engine="google"):
     if engine == "google":
         base_url = "https://www.google.com/search"
         query_param = "q"
@@ -58,13 +58,13 @@ def serp_search(query, engine="google"):
     url = "https://api.brightdata.com/request"
     
     if engine in ["google", "bing"]:
-        url_with_query = f"{base_url}?{query_param}={quote_plus(query)}&brd_json=1"
-        payload = {"zone": "ai_agent", "url": url_with_query, "format": "raw"}
+        url_with_query = f"{base_url}?{query_param}={quote_plus(query)}&brd_json=1"    
     elif engine == "baidu":
         url_with_query = f"{base_url}?{query_param}={quote_plus(query)}"
-        payload = {"zone": "ai_agent", "url": url_with_query, "format": "raw"}
 
-    full_response = _make_api_request(url, engine, json=payload)
+    payload = {"zone": "ai_agent", "url": url_with_query, "format": "raw"}
+    full_response = await _make_api_request(url, engine, json=payload)
+    
     if not full_response:
         return None
 
@@ -79,8 +79,8 @@ def serp_search(query, engine="google"):
     }
 
 
-def _trigger_and_download_snapshot(trigger_url, params, data, operation_name="operation"):
-    trigger_result = _make_api_request(trigger_url, engine=None, params=params, json=data)
+async def _trigger_and_download_snapshot(trigger_url, params, data, operation_name="operation"):
+    trigger_result = await _make_api_request(trigger_url, engine=None, params=params, json=data)
     if not trigger_result:
         return None
 
@@ -95,7 +95,7 @@ def _trigger_and_download_snapshot(trigger_url, params, data, operation_name="op
     return raw_data
 
 
-def reddit_search_api(keyword, date="All time", sort_by="Hot", num_of_posts=75):
+async def reddit_search_api(keyword, date="All time", sort_by="Hot", num_of_posts=75):
     trigger_url = "https://api.brightdata.com/datasets/v3/trigger"
 
     params = {
@@ -114,7 +114,7 @@ def reddit_search_api(keyword, date="All time", sort_by="Hot", num_of_posts=75):
         }
     ]
 
-    raw_data = _trigger_and_download_snapshot(
+    raw_data = await _trigger_and_download_snapshot(
         trigger_url, params, data, operation_name="reddit"
     )
 
