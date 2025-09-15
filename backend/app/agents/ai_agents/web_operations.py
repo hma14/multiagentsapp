@@ -18,7 +18,7 @@ async def _make_api_request(url, engine, **kwargs):
     }
 
     try:
-        response = await requests.post(url, headers=headers, **kwargs)
+        response = requests.post(url, headers=headers, **kwargs)
         response.raise_for_status()
         return response.text if engine == "baidu" else response.json()        
     except requests.exceptions.RequestException as e:
@@ -95,7 +95,7 @@ async def _trigger_and_download_snapshot(trigger_url, params, data, operation_na
     return raw_data
 
 
-async def reddit_search_api(keyword, date="All time", sort_by="Hot", num_of_posts=75):
+async def reddit_search_api(keyword, date="All time", sort_by="Hot", num_of_posts=15):
     trigger_url = "https://api.brightdata.com/datasets/v3/trigger"
 
     params = {
@@ -179,7 +179,7 @@ def get_dataset_id(api_token: str, dataset_name: str) -> str | None:
     """
 
 
-def reddit_post_retrieval(urls, days_back=10, load_all_replies=False, comment_limit=""):
+async def reddit_post_retrieval(urls, days_back=10, load_all_replies=False, comment_limit=""):
     if not urls:
         return None
 
@@ -188,6 +188,9 @@ def reddit_post_retrieval(urls, days_back=10, load_all_replies=False, comment_li
     API_TOKEN = os.getenv("BRIGHTDATA_TOKEN")
     dataset_name = "Reddit"  # whatever you named it in Bright Data
 
+    if not API_TOKEN:
+        return None
+    
     if dataset_id := get_dataset_id(API_TOKEN, dataset_name):
         print(f"Dataset ID for '{dataset_name}': {dataset_id}")
     else:
@@ -207,7 +210,7 @@ def reddit_post_retrieval(urls, days_back=10, load_all_replies=False, comment_li
         for url in urls
     ]
 
-    raw_data = _trigger_and_download_snapshot(
+    raw_data = await _trigger_and_download_snapshot(
         trigger_url, params, data, operation_name="reddit comments"
     )
     if not raw_data:

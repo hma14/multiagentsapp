@@ -48,7 +48,7 @@ def get_results(page: int = Query(1, ge=1),
     
     statement = (
         select(PromptResult)
-        .order_by(PromptResult.createdAt.desc())
+        .order_by(PromptResult.createdAt.desc()) # type: ignore[arg-type]
         .offset((page - 1) * page_size)
         .limit(page_size)
     )

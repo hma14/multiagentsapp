@@ -84,6 +84,8 @@ async def reddit_search(state: State):
 
     return {"reddit_results": reddit_results}
 
+# The code snippet you provided is a Python script that sets up a chatbot capable of conducting
+# multi-source research. Here is a breakdown of the key components and functionalities:
 
 async def analyze_reddit_posts(state: State):
     user_question = state.get("user_question", "")
@@ -93,11 +95,11 @@ async def analyze_reddit_posts(state: State):
         return {"selected_reddit_urls": []}
 
     structured_llm = llm.with_structured_output(RedditURLAnalysis)
-    messages = get_reddit_url_analysis_messages(user_question, reddit_results)
+    messages = get_reddit_url_analysis_messages(user_question, reddit_results) # type: ignore[arg-type]
 
     try:
         analysis = structured_llm.invoke(messages)
-        selected_urls = analysis.selected_urls
+        selected_urls = analysis.selected_urls # type: ignore[arg-type]
 
         print("Selected URLs:")
         for i, url in enumerate(selected_urls, 1):
@@ -120,7 +122,7 @@ async def retrieve_reddit_posts(state: State):
 
     print(f"Processing {len(selected_urls)} Reddit URLs")
 
-    reddit_post_data = reddit_post_retrieval(selected_urls)
+    reddit_post_data = await reddit_post_retrieval(selected_urls)
 
     if reddit_post_data:
         print(f"Successfully got {len(reddit_post_data)} posts")
@@ -138,7 +140,7 @@ async def analyze_google_results(state: State):
     user_question = state.get("user_question", "")
     google_results = state.get("google_results", "")
 
-    messages = get_google_analysis_messages(user_question, google_results)
+    messages = get_google_analysis_messages(user_question, google_results)  # type: ignore[arg-type]
     reply = await llm.ainvoke(messages)
 
     return {"google_analysis": reply.content}
@@ -150,7 +152,7 @@ async def analyze_bing_results(state: State):
     user_question = state.get("user_question", "")
     bing_results = state.get("bing_results", "")
 
-    messages = get_bing_analysis_messages(user_question, bing_results)
+    messages = get_bing_analysis_messages(user_question, bing_results) # type: ignore[arg-type]
     reply = await llm.ainvoke(messages)
 
     return {"bing_analysis": reply.content}
@@ -161,7 +163,7 @@ async def analyze_baidu_results(state: State):
     user_question = state.get("user_question", "")
     baidu_results = state.get("baidu_results", "")
 
-    messages = get_baidu_analysis_messages(user_question, baidu_results)
+    messages = get_baidu_analysis_messages(user_question, baidu_results)  # type: ignore[arg-type]
     reply = await llm.ainvoke(messages)
 
     return {"baidu_analysis": reply.content}
@@ -174,7 +176,7 @@ async def analyze_reddit_results(state: State):
     reddit_results = state.get("reddit_results", "")
     reddit_post_data = state.get("reddit_post_data", "")
 
-    messages = get_reddit_analysis_messages(user_question, reddit_results, reddit_post_data)
+    messages = get_reddit_analysis_messages(user_question, reddit_results, reddit_post_data)  # type: ignore[arg-type]
     reply = await llm.ainvoke(messages)
 
     return {"reddit_analysis": reply.content}
@@ -190,7 +192,7 @@ async def synthesize_analyses(state: State):
     reddit_analysis = state.get("reddit_analysis", "")
 
     messages = get_synthesis_messages(
-        user_question, google_analysis, bing_analysis, baidu_analysis, reddit_analysis
+        user_question, google_analysis, bing_analysis, baidu_analysis, reddit_analysis # type: ignore[arg-type]
     )
 
     reply = await llm.ainvoke(messages)
@@ -258,7 +260,7 @@ async def run_chatbot(user_input):
 
     print("\nStarting parallel research process...")
     print("Launching Google, Bing, and Reddit searches...\n")
-    final_state = await graph.ainvoke(state)
+    final_state = await graph.ainvoke(state) # type: ignore[arg-type]
 
     if final_state.get("final_answer"):
         print(f"\nFinal Answer:\n{final_state.get('final_answer')}\n")
