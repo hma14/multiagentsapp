@@ -72,7 +72,7 @@ def run_agents(prompt: str) -> str:
         datasets = get_brightdata_datasets()
 
         if datasets.status_code == 500:
-            return JSONResponse(content={"error": datasets.body}, status_code=500)
+            return JSONResponse(content={"error": datasets.body}, status_code=500)  # type: ignore
         # Ask GPT to analyze dataset names/descriptions against prompt
         response = client.chat.completions.create(
             model="gpt-4o",
@@ -82,6 +82,6 @@ def run_agents(prompt: str) -> str:
             ]
         )
 
-        return response.choices[0].message.content
+        return response.choices[0].message.content # type: ignore
     except Exception as e:
-        return JSONResponse(content={"error": str(e)}, status_code=500)
+        return JSONResponse(content={"error": str(e)}, status_code=500) # type: ignore
