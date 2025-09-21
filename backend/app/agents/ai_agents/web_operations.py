@@ -74,8 +74,8 @@ async def serp_search(query, engine="google"):
         return {"organic": results, "knowledge": {}}
     
     return {
-        "knowledge": full_response.get("knowledge", {}),
-        "organic": full_response.get("organic", []),
+        "knowledge": full_response.get("knowledge", {}), # type: ignore[arg-type]
+        "organic": full_response.get("organic", []), # type: ignore[arg-type]
     }
 
 
@@ -84,7 +84,7 @@ async def _trigger_and_download_snapshot(trigger_url, params, data, operation_na
     if not trigger_result:
         return None
 
-    snapshot_id = trigger_result.get("snapshot_id")
+    snapshot_id = trigger_result.get("snapshot_id")  # type: ignore[arg-type]
     if not snapshot_id:
         return None
 
@@ -96,10 +96,13 @@ async def _trigger_and_download_snapshot(trigger_url, params, data, operation_na
 
 
 async def reddit_search_api(keyword, date="All time", sort_by="Hot", num_of_posts=15):
+    
+    #trigger_url = f"https://api.brightdata.com/datasets/request_collection?dataset_id={dataset_id}&type=discover_new"
+
     trigger_url = "https://api.brightdata.com/datasets/v3/trigger"
 
     params = {
-        "dataset_id": dataset_id, #"gd_lvz8ah06191smkebj4",
+        "dataset_id": dataset_id,
         "include_errors": "true",
         "type": "discover_new",
         "discover_by": "keyword"
@@ -122,13 +125,13 @@ async def reddit_search_api(keyword, date="All time", sort_by="Hot", num_of_post
         return None
 
     parsed_data = []
-    if parsed_data:
-        for post in raw_data:
-            parsed_post = {
-                "title": post.get("title"),
-                "url": post.get("url")
-            }
-            parsed_data.append(parsed_post)
+    #if parsed_data:
+    for post in raw_data:
+        parsed_post = {
+            "title": post.get("title"),
+            "url": post.get("url")
+        }
+        parsed_data.append(parsed_post)
 
     return {"parsed_posts": parsed_data, "total_found": len(parsed_data)}
 
@@ -183,20 +186,23 @@ async def reddit_post_retrieval(urls, days_back=10, load_all_replies=False, comm
     if not urls:
         return None
 
-    trigger_url = "https://api.brightdata.com/datasets/v3/trigger"
+    #trigger_url = "https://api.brightdata.com/datasets/v3/trigger"
+    
+    dataset_id = "gd_lvzdpsdlw09j6t702"
+    trigger_url = f"https://api.brightdata.com/datasets/request_collection?dataset_id={dataset_id}&type=discover_new"
 
-    API_TOKEN = os.getenv("BRIGHTDATA_TOKEN")
+    API_KEY = os.getenv("BRIGHTDATA_TOKEN")
     dataset_name = "Reddit"  # whatever you named it in Bright Data
 
-    if not API_TOKEN:
+    if not API_KEY:
         return None
     
-    if dataset_id := get_dataset_id(API_TOKEN, dataset_name):
-        print(f"Dataset ID for '{dataset_name}': {dataset_id}")
+    if dataset_id2 := get_dataset_id(API_KEY, dataset_name):
+        print(f"Dataset ID for '{dataset_name}': {dataset_id2}")
     else:
         print(f"Dataset '{dataset_name}' not found.")
     params = {
-        "dataset_id": dataset_id, #"gd_lvzdpsdlw09j6t702",
+        #"dataset_id": "gd_lvzdpsdlw09j6t702",
         "include_errors": "true"
     }
 
