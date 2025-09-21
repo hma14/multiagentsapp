@@ -24,7 +24,10 @@ import {
   Pagination,
   Paper,
   CircularProgress,
+  IconButton,
 } from "@mui/material";
+
+import SendIcon from "@mui/icons-material/Send"; // arrow icon
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import dayjs from "dayjs";
 import "./App.css";
@@ -100,7 +103,7 @@ function App() {
         <SpinningLogo />
         <TextField
           fullWidth
-          label="Enter your prompt"
+          label="Ask anything"
           value={prompt}
           sx={{
             mt: 2,
@@ -110,24 +113,22 @@ function App() {
           }}
           onChange={(e) => setPrompt(e.target.value)}
         />
-      </Box>
-      <Box sx={{ display: "flex", justifyContent: "flex-end" }}>
-        <Button
-          variant="contained"
-          alignItems="right"
+
+        <IconButton
+          type="submit"
           sx={{
-            mt: 2,
-            borderRadius: "5px", // fully rounded pill style
-            backgroundColor: "primary",
-            fontSize: 12,
+            ml: 1,
+            bgcolor: "#10a37f", // ChatGPT green
+            color: "white",
+            "&:hover": { bgcolor: "#0d8c6c" },
             display: "flex",
-            alignItems: "right",
+            justifyContent: "flex-end",
           }}
           onClick={submitPrompt}
           disabled={isLoading}
         >
-          Submit
-        </Button>
+          <SendIcon />
+        </IconButton>
       </Box>
 
       {results.map((r) => (
