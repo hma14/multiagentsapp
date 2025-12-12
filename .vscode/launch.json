@@ -2,14 +2,18 @@
   "version": "0.2.0",
   "configurations": [
     {
-      "name": "Python: main.py",
+      "name": "Python: Uvicorn (FastAPI)",
       "type": "debugpy",
       "request": "launch",
-      "program": "${workspaceFolder}/backend/.venv/Scripts/uvicorn.exe",
+      "module": "uvicorn",
       "args": ["main:app", "--reload", "--host", "0.0.0.0", "--port", "8000"],
       "cwd": "${workspaceFolder}/backend/app",
       "console": "integratedTerminal",
-      "justMyCode": true
+      "justMyCode": true,
+      "jinja": true,
+      "env": {
+        "PYTHONPATH": "${workspaceFolder}/backend/app"
+      }
     },
     {
       "name": "React: Frontend",
@@ -24,7 +28,7 @@
   "compounds": [
     {
       "name": "Debug Both Frontend and Backend",
-      "configurations": ["Python: main.py", "React: Frontend"]
+      "configurations": ["Python: Uvicorn (FastAPI)", "React: Frontend"]
     }
   ]
 }

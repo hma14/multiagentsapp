@@ -17,6 +17,8 @@ from .prompts import (
     get_synthesis_messages
 )
 
+from typing import cast
+
 load_dotenv(find_dotenv(usecwd=True), override=True)
 
 #print("API KEY:", os.getenv("OPENAI_API_KEY"))
@@ -27,6 +29,7 @@ llm = init_chat_model(
     model_provider="openai",
     api_key=api_key,
 )
+
 
 
 class State(TypedDict):
@@ -95,11 +98,12 @@ async def analyze_reddit_posts(state: State):
         return {"selected_reddit_urls": []}
 
     structured_llm = llm.with_structured_output(RedditURLAnalysis)
-    messages = get_reddit_url_analysis_messages(user_question, reddit_results) # type: ignore[arg-type]
+    messages = get_reddit_url_analysis_messages(user_question, reddit_results) 
 
     try:
-        analysis = structured_llm.invoke(messages)
-        selected_urls = analysis.selected_urls # type: ignore[arg-type]
+        analysis_raw = structured_llm.invoke(messages) 
+        analysis = RedditURLAnalysis.model_validate(analysis_raw)
+        selected_urls = analysis.selected_urls 
 
         print("Selected URLs:")
         for i, url in enumerate(selected_urls, 1):
@@ -140,7 +144,7 @@ async def analyze_google_results(state: State):
     user_question = state.get("user_question", "")
     google_results = state.get("google_results", "")
 
-    messages = get_google_analysis_messages(user_question, google_results)  # type: ignore[arg-type]
+    messages = get_google_analysis_messages(user_question, google_results) 
     reply = await llm.ainvoke(messages)
 
     return {"google_analysis": reply.content}
@@ -152,7 +156,7 @@ async def analyze_bing_results(state: State):
     user_question = state.get("user_question", "")
     bing_results = state.get("bing_results", "")
 
-    messages = get_bing_analysis_messages(user_question, bing_results) # type: ignore[arg-type]
+    messages = get_bing_analysis_messages(user_question, bing_results)
     reply = await llm.ainvoke(messages)
 
     return {"bing_analysis": reply.content}
@@ -163,7 +167,7 @@ async def analyze_baidu_results(state: State):
     user_question = state.get("user_question", "")
     baidu_results = state.get("baidu_results", "")
 
-    messages = get_baidu_analysis_messages(user_question, baidu_results)  # type: ignore[arg-type]
+    messages = get_baidu_analysis_messages(user_question, baidu_results) 
     reply = await llm.ainvoke(messages)
 
     return {"baidu_analysis": reply.content}
@@ -176,7 +180,7 @@ async def analyze_reddit_results(state: State):
     reddit_results = state.get("reddit_results", "")
     reddit_post_data = state.get("reddit_post_data", "")
 
-    messages = get_reddit_analysis_messages(user_question, reddit_results, reddit_post_data)  # type: ignore[arg-type]
+    messages = get_reddit_analysis_messages(user_question, reddit_results, reddit_post_data)
     reply = await llm.ainvoke(messages)
 
     return {"reddit_analysis": reply.content}
@@ -192,7 +196,7 @@ async def synthesize_analyses(state: State):
     reddit_analysis = state.get("reddit_analysis", "")
 
     messages = get_synthesis_messages(
-        user_question, google_analysis, bing_analysis, baidu_analysis, reddit_analysis # type: ignore[arg-type]
+        user_question, google_analysis, bing_analysis, baidu_analysis, reddit_analysis 
     )
 
     reply = await llm.ainvoke(messages)
@@ -244,23 +248,47 @@ graph = graph_builder.compile()
 async def run_chatbot(user_input):
     print("Multi-Source Research Agent")
 
-    state = {
+
+    #Cast the dict to the State type
+    """     
+        initial_state : State = cast(State, {
         "messages": [{"role": "user", "content": user_input}],
         "user_question": user_input,
         "google_results": None,
         "bing_results": None,
+        "baidu_results": None,
         "reddit_results": None,
         "selected_reddit_urls": None,
         "reddit_post_data": None,
         "google_analysis": None,
         "bing_analysis": None,
+        "baidu_analysis": None,
+        "reddit_analysis": None,
+        "final_answer": None,
+    })
+    
+    """   
+    initial_state : State = {
+        "messages": [{"role": "user", "content": user_input}],
+        "user_question": user_input,
+        "google_results": None,
+        "bing_results": None,
+        "baidu_results": None,
+        "reddit_results": None,
+        "selected_reddit_urls": None,
+        "reddit_post_data": None,
+        "google_analysis": None,
+        "bing_analysis": None,
+        "baidu_analysis": None,
         "reddit_analysis": None,
         "final_answer": None,
     }
+    
+
 
     print("\nStarting parallel research process...")
     print("Launching Google, Bing, and Reddit searches...\n")
-    final_state = await graph.ainvoke(state) # type: ignore[arg-type]
+    final_state = await graph.ainvoke(initial_state) 
 
     if final_state.get("final_answer"):
         print(f"\nFinal Answer:\n{final_state.get('final_answer')}\n")

@@ -79,7 +79,7 @@ Focus on:
 - Additional perspectives not covered in other sources
 - Technical details and documentation
 - News articles and recent developments
-- Microsoft ecosystem and enterprise perspectives
+- Baidu ecosystem and enterprise perspectives
 
 Provide a concise analysis highlighting unique findings and perspectives."""
 
@@ -126,11 +126,11 @@ Please analyze this Reddit content and extract community insights, user experien
         return """You are an expert research synthesizer. Combine the provided analyses from different sources to create a comprehensive, well-structured answer.
 
 Your task:
-- Synthesize insights from Google, Bing, and Reddit analyses
+- Synthesize insights from Google, Bing, Baidu and Reddit analyses
 - Identify common themes and conflicting information
 - Present a balanced view incorporating different perspectives
 - Structure the response logically with clear sections
-- Cite the source type (Google, Bing, Reddit) for key claims
+- Cite the source type (Google, Bing, Baidu, Reddit) for key claims
 - Highlight any contradictions or uncertainties
 
 Create a comprehensive answer that addresses the user's question from multiple angles."""
@@ -176,63 +176,68 @@ def create_message_pair(system_prompt: str, user_prompt: str) -> list[Dict[str, 
 
 # Convenience functions for creating complete message arrays
 def get_reddit_url_analysis_messages(
-    user_question: str, reddit_results: str
+    user_question: str | None, reddit_results: str | None
 ) -> list[Dict[str, Any]]:
     """Get messages for Reddit URL analysis."""
     return create_message_pair(
         PromptTemplates.reddit_url_analysis_system(),
-        PromptTemplates.reddit_url_analysis_user(user_question, reddit_results),
+        PromptTemplates.reddit_url_analysis_user(user_question or "", reddit_results or ""),
     )
 
 
 def get_google_analysis_messages(
-    user_question: str, google_results: str
+    user_question: str | None, google_results: str | None
 ) -> list[Dict[str, Any]]:
     """Get messages for Google results analysis."""
     return create_message_pair(
         PromptTemplates.google_analysis_system(),
-        PromptTemplates.google_analysis_user(user_question, google_results),
+        PromptTemplates.google_analysis_user(user_question or "", google_results or ""),
     )
 
 
 def get_bing_analysis_messages(
-    user_question: str, bing_results: str
+    user_question: str | None, bing_results: str | None
 ) -> list[Dict[str, Any]]:
     """Get messages for Bing results analysis."""
     return create_message_pair(
         PromptTemplates.bing_analysis_system(),
-        PromptTemplates.bing_analysis_user(user_question, bing_results),
+        PromptTemplates.bing_analysis_user(user_question or "", bing_results or ""),
     )
     
 def get_baidu_analysis_messages(
-    user_question: str, baidu_results: str
+    user_question: str | None, baidu_results: str | None
 ) -> list[Dict[str, Any]]:
     """Get messages for Baidu results analysis."""
     return create_message_pair(
         PromptTemplates.baidu_analysis_system(),
-        PromptTemplates.baidu_analysis_user(user_question, baidu_results),
+        PromptTemplates.baidu_analysis_user(user_question or "", baidu_results or ""),
     )
 
 
 def get_reddit_analysis_messages(
-    user_question: str, reddit_results: str, reddit_post_data: list
+    user_question:  str | None, reddit_results:  str | None , reddit_post_data: list | None
 ) -> list[Dict[str, Any]]:
     """Get messages for Reddit discussions analysis."""
     return create_message_pair(
         PromptTemplates.reddit_analysis_system(),
         PromptTemplates.reddit_analysis_user(
-            user_question, reddit_results, reddit_post_data
+            user_question or "", reddit_results or "", reddit_post_data or []
         ),
     )
 
 
 def get_synthesis_messages(
-    user_question: str, google_analysis: str, bing_analysis: str, baidu_analysis: str, reddit_analysis: str
+    user_question:# The `str | None` syntax in Python represents a type hint using the Union operator
+    # `|`, indicating that the annotated parameter or variable can accept values of
+    # either type `str` or `None`. This is part of Python's type hinting system
+    # introduced in PEP 484 and allows developers to specify the expected types of
+    # function arguments, return values, and variables.
+     str | None, google_analysis: str | None, bing_analysis: str | None, baidu_analysis: str | None, reddit_analysis: str | None
 ) -> list[Dict[str, Any]]:
     """Get messages for final synthesis."""
     return create_message_pair(
         PromptTemplates.synthesis_system(),
         PromptTemplates.synthesis_user(
-            user_question, google_analysis, bing_analysis, baidu_analysis, reddit_analysis
+            user_question or "", google_analysis or "", bing_analysis or "", baidu_analysis or "", reddit_analysis or ""
         ),
     )

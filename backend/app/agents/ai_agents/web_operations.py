@@ -1,15 +1,62 @@
 from dotenv import load_dotenv
 import os
+import json
 import requests
 from urllib.parse import quote_plus
 from .snapshot_operations import download_snapshot, poll_snapshot_status
 from bs4 import BeautifulSoup
+from typing import Any, Dict
+import httpx
 
-load_dotenv()
+load_dotenv(override=True)
 
 dataset_id = "gd_lvz8ah06191smkebj4"
 
-async def _make_api_request(url, engine, **kwargs):
+import os
+import json
+from typing import Any, Dict
+import httpx
+
+
+async def _make_api_request(
+    url: str,
+    engine: str,
+    **kwargs: Any
+) -> Dict[str, Any]:
+    """Make an async HTTP POST request and always return a dict."""
+
+    api_key = os.getenv("BRIGHTDATA_TOKEN")
+
+    headers = {
+        "Authorization": f"Bearer {api_key}",
+        "Content-Type": "application/json",
+    }
+
+    # Simple retry logic (3 attempts)
+    for attempt in range(3):
+        try:
+            async with httpx.AsyncClient(timeout=10) as client:
+                response = await client.post(url, headers=headers, **kwargs)
+                response.raise_for_status()
+
+                # Normalized return: always a dictionary
+                return json.loads(response.text) if engine == "baidu" else response.json()
+
+        except httpx.HTTPStatusError as e:
+            print(f"[Attempt {attempt+1}] HTTP error: {e}")
+
+        except httpx.RequestError as e:
+            print(f"[Attempt {attempt+1}] Request failed: {e}")
+
+        except json.JSONDecodeError as e:
+            print(f"JSON parse error: {e}")
+            return {}
+
+    # If all retries failed → safe fallback
+    return {}
+
+
+async def _make_api_request_old(url, engine, **kwargs):
     api_key = os.getenv("BRIGHTDATA_TOKEN")
 
     headers = {
@@ -20,7 +67,7 @@ async def _make_api_request(url, engine, **kwargs):
     try:
         response = requests.post(url, headers=headers, **kwargs)
         response.raise_for_status()
-        return response.text if engine == "baidu" else response.json()        
+        return json.loads(response.text) if engine == "baidu" else response.json()        
     except requests.exceptions.RequestException as e:
         print(f"API request failed: {e}")
         return None
@@ -74,8 +121,8 @@ async def serp_search(query, engine="google"):
         return {"organic": results, "knowledge": {}}
     
     return {
-        "knowledge": full_response.get("knowledge", {}), # type: ignore[arg-type]
-        "organic": full_response.get("organic", []), # type: ignore[arg-type]
+        "knowledge": full_response.get("knowledge", {}), 
+        "organic": full_response.get("organic", []), 
     }
 
 
@@ -91,8 +138,7 @@ async def _trigger_and_download_snapshot(trigger_url, params, data, operation_na
     if not poll_snapshot_status(snapshot_id):
         return None
 
-    raw_data = download_snapshot(snapshot_id)
-    return raw_data
+    return download_snapshot(snapshot_id)
 
 
 async def reddit_search_api(keyword, date="All time", sort_by="Hot", num_of_posts=15):
