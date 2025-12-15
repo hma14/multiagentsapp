@@ -7,6 +7,10 @@ from .snapshot_operations import download_snapshot, poll_snapshot_status
 from bs4 import BeautifulSoup
 from typing import Any, Dict
 import httpx
+import contextlib
+from pydantic import BaseModel, Field, ValidationError
+import time
+from clients import client
 
 load_dotenv(override=True)
 
@@ -17,11 +21,48 @@ import json
 from typing import Any, Dict
 import httpx
 
+# -----------------------------------------------
+#  Pydantic Response Model
+# -----------------------------------------------
+class ApiResponse(BaseModel):
+    knowledge: Dict[str, Any] = Field(default_factory=dict)
+    organic: list = Field(default_factory=list)
+    
+# -----------------------------------------------
+#  Logging helper
+# -----------------------------------------------
+def log(message: str) -> None:
+    print(f"[API] {message}")
+    
+    # -----------------------------------------------
+#  Unified JSON / HTML parsing
+# -----------------------------------------------
+def parse_response_text(text: str) -> Dict[str, Any]:
+    """
+    Tries JSON parsing first.
+    If JSON fails, falls back to HTML parsing.
+    Always returns a dict.
+    """
+    # Try JSON
+    with contextlib.suppress(json.JSONDecodeError):
+        return json.loads(text)    
+
+    # Try HTML
+    with contextlib.suppress(Exception):
+        soup = BeautifulSoup(text, "html.parser")
+
+        # Example logic: extract text blocks or divs
+        paragraphs = [p.get_text(strip=True) for p in soup.find_all("p")]
+        return {"html_raw": text, "html_parsed": paragraphs}
+
+    # Fallback: empty dict
+    return {}
+    
 
 async def _make_api_request(
     url: str,
     engine: str,
-    **kwargs: Any
+    **kwargs: Any, 
 ) -> Dict[str, Any]:
     """Make an async HTTP POST request and always return a dict."""
 
@@ -31,49 +72,54 @@ async def _make_api_request(
         "Authorization": f"Bearer {api_key}",
         "Content-Type": "application/json",
     }
-
+    
+    # Exponential backoff schedule
+    backoff_delays = [0.5, 1.0, 2.0]  # seconds
+    
     # Simple retry logic (3 attempts)
-    for attempt in range(3):
+    for attempt in range(len(backoff_delays) + 1):
         try:
-            async with httpx.AsyncClient(timeout=10) as client:
-                response = await client.post(url, headers=headers, **kwargs)
-                response.raise_for_status()
+            log(f"Sending request to {engine} (Attempt {attempt + 1})")
+            response = await client.post(url, headers=headers, **kwargs)
+            response.raise_for_status()
 
-                # Normalized return: always a dictionary
-                return json.loads(response.text) if engine == "baidu" else response.json()
+            text = response.text
 
-        except httpx.HTTPStatusError as e:
-            print(f"[Attempt {attempt+1}] HTTP error: {e}")
+            # Baidu may return HTML → attempt both
+            if engine == "baidu":
+                data = parse_response_text(text)
+            else:
+                # Normal engines return JSON
+                try:
+                    data = response.json()
+                except json.JSONDecodeError:
+                    data = parse_response_text(text)
+
+                # Validate using Pydantic
+                try:
+                    validated = ApiResponse(**data)
+                    log("Response validated successfully.")
+                    return validated.model_dump()
+                except ValidationError as e:
+                    log(f"Validation failed: {e}")
+                    return {}
 
         except httpx.RequestError as e:
-            print(f"[Attempt {attempt+1}] Request failed: {e}")
+            log(f"Connection error: {e}")
 
-        except json.JSONDecodeError as e:
-            print(f"JSON parse error: {e}")
-            return {}
+        except httpx.HTTPStatusError as e:
+            log(f"HTTP {e.response.status_code}: {e}")
+
+        # If failed and retries left → wait
+        if attempt < len(backoff_delays):
+            delay = backoff_delays[attempt]
+            log(f"Retrying in {delay}s...")
+            time.sleep(delay)
+
+    log("All retries failed.")
 
     # If all retries failed → safe fallback
     return {}
-
-
-async def _make_api_request_old(url, engine, **kwargs):
-    api_key = os.getenv("BRIGHTDATA_TOKEN")
-
-    headers = {
-        "Authorization": f"Bearer {api_key}",
-        "Content-Type": "application/json",
-    }
-
-    try:
-        response = requests.post(url, headers=headers, **kwargs)
-        response.raise_for_status()
-        return json.loads(response.text) if engine == "baidu" else response.json()        
-    except requests.exceptions.RequestException as e:
-        print(f"API request failed: {e}")
-        return None
-    except Exception as e:
-        print(f"Unknown error: {e}")
-        return None
 
 def parse_baidu_html(html):
     soup = BeautifulSoup(html, "html.parser")
@@ -127,7 +173,7 @@ async def serp_search(query, engine="google"):
 
 
 async def _trigger_and_download_snapshot(trigger_url, params, data, operation_name="operation"):
-    trigger_result = await _make_api_request(trigger_url, engine=None, params=params, json=data)
+    trigger_result = await _make_api_request(trigger_url, engine="", params=params, json=data)
     if not trigger_result:
         return None
 
@@ -278,3 +324,4 @@ async def reddit_post_retrieval(urls, days_back=10, load_all_replies=False, comm
         parsed_comments.append(parsed_comment)
 
     return {"comments": parsed_comments, "total_retrieved": len(parsed_comments)}
+

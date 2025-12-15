@@ -6,8 +6,31 @@ from agents.agent_manager import run_agents
 from fastapi.middleware.cors import CORSMiddleware
 from agents.ai_agents.ai_agent_search import run_chatbot
 from contextlib import asynccontextmanager
+from clients import client
+import httpx
 
-app = FastAPI()
+@asynccontextmanager
+async def app_lifespan(app: FastAPI):
+    
+    timeout = httpx.Timeout(
+        connect=5,
+        read=10,
+        write=10,
+        pool=5,
+    )
+    # startup
+    app.state.http = httpx.AsyncClient(
+        timeout=httpx.Timeout(timeout=timeout)
+    )
+
+    yield  # 👈 app is running
+
+    # shutdown
+    await app.state.http.aclose()
+
+app = FastAPI(lifespan=app_lifespan)
+
+
 
 # Allow frontend (localhost:3000) to talk to backend (localhost:8000)
 app.add_middleware(
@@ -17,6 +40,9 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+async def shutdown():
+    await client.aclose()
 
 # Create DB tables on startup    
 @asynccontextmanager
