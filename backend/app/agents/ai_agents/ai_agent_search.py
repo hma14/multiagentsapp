@@ -21,7 +21,7 @@ from typing import cast
 
 load_dotenv(find_dotenv(usecwd=True), override=True)
 
-#print("API KEY:", os.getenv("OPENAI_API_KEY"))
+#log("API KEY:", os.getenv("OPENAI_API_KEY"))
 api_key = os.getenv("OPENAI_API_KEY")
 
 llm = init_chat_model(
@@ -30,6 +30,11 @@ llm = init_chat_model(
     api_key=api_key,
 )
 
+# -----------------------------------------------
+#  Logging helper
+# -----------------------------------------------
+def log(message: str) -> None:
+    log(f"[AGENT SEARCH] {message}")
 
 
 class State(TypedDict):
@@ -54,7 +59,7 @@ class RedditURLAnalysis(BaseModel):
 
 async def google_search(state: State):
     user_question = state.get("user_question", "")
-    print(f"Searching Google for: {user_question}")
+    log(f"Searching Google for: {user_question}")
 
     google_results = await serp_search(user_question, engine="google")
 
@@ -63,7 +68,7 @@ async def google_search(state: State):
 
 async def bing_search(state: State):
     user_question = state.get("user_question", "")
-    print(f"Searching Bing for: {user_question}")
+    log(f"Searching Bing for: {user_question}")
 
     bing_results = await serp_search(user_question, engine="bing")
 
@@ -71,7 +76,7 @@ async def bing_search(state: State):
 
 async def baidu_search(state: State):
     user_question = state.get("user_question", "")
-    print(f"Searching Baidu for: {user_question}")
+    log(f"Searching Baidu for: {user_question}")
 
     baidu_results = await serp_search(user_question, engine="baidu")
 
@@ -80,10 +85,10 @@ async def baidu_search(state: State):
 
 async def reddit_search(state: State):
     user_question = state.get("user_question", "")
-    print(f"Searching Reddit for: {user_question}")
+    log(f"Searching Reddit for: {user_question}")
 
     reddit_results = await reddit_search_api(keyword=user_question)
-    print(reddit_results)
+    log(reddit_results)
 
     return {"reddit_results": reddit_results}
 
@@ -105,41 +110,41 @@ async def analyze_reddit_posts(state: State):
         analysis = RedditURLAnalysis.model_validate(analysis_raw)
         selected_urls = analysis.selected_urls 
 
-        print("Selected URLs:")
+        log("Selected URLs:")
         for i, url in enumerate(selected_urls, 1):
-            print(f"   {i}. {url}")
+            log(f"   {i}. {url}")
 
     except Exception as e:
-        print(e)
+        log(e)
         selected_urls = []
 
     return {"selected_reddit_urls": selected_urls}
 
 
 async def retrieve_reddit_posts(state: State):
-    print("Getting reddit post comments")
+    log("Getting reddit post comments")
 
     selected_urls = state.get("selected_reddit_urls", [])
 
     if not selected_urls:
         return {"reddit_post_data": []}
 
-    print(f"Processing {len(selected_urls)} Reddit URLs")
+    log(f"Processing {len(selected_urls)} Reddit URLs")
 
     reddit_post_data = await reddit_post_retrieval(selected_urls)
 
     if reddit_post_data:
-        print(f"Successfully got {len(reddit_post_data)} posts")
+        log(f"Successfully got {len(reddit_post_data)} posts")
     else:
-        print("Failed to get post data")
+        log("Failed to get post data")
         reddit_post_data = []
 
-    print(reddit_post_data)
+    log(reddit_post_data)
     return {"reddit_post_data": reddit_post_data}
 
 
 async def analyze_google_results(state: State):
-    print("Analyzing google search results")
+    log("Analyzing google search results")
 
     user_question = state.get("user_question", "")
     google_results = state.get("google_results", "")
@@ -151,7 +156,7 @@ async def analyze_google_results(state: State):
 
 
 async def analyze_bing_results(state: State):
-    print("Analyzing bing search results")
+    log("Analyzing bing search results")
 
     user_question = state.get("user_question", "")
     bing_results = state.get("bing_results", "")
@@ -162,7 +167,7 @@ async def analyze_bing_results(state: State):
     return {"bing_analysis": reply.content}
 
 async def analyze_baidu_results(state: State):
-    print("Analyzing baidu search results")
+    log("Analyzing baidu search results")
 
     user_question = state.get("user_question", "")
     baidu_results = state.get("baidu_results", "")
@@ -174,7 +179,7 @@ async def analyze_baidu_results(state: State):
 
 
 async def analyze_reddit_results(state: State):
-    print("Analyzing reddit search results")
+    log("Analyzing reddit search results")
 
     user_question = state.get("user_question", "")
     reddit_results = state.get("reddit_results", "")
@@ -187,7 +192,7 @@ async def analyze_reddit_results(state: State):
 
 
 async def synthesize_analyses(state: State):
-    print("Combine all results together")
+    log("Combine all results together")
 
     user_question = state.get("user_question", "")
     google_analysis = state.get("google_analysis", "")
@@ -246,7 +251,7 @@ graph = graph_builder.compile()
 
 
 async def run_chatbot(user_input):
-    print("Multi-Source Research Agent")
+    log("Multi-Source Research Agent")
 
 
     #Cast the dict to the State type
@@ -286,12 +291,12 @@ async def run_chatbot(user_input):
     
 
 
-    print("\nStarting parallel research process...")
-    print("Launching Google, Bing, and Reddit searches...\n")
+    log("\nStarting parallel research process...")
+    log("Launching Google, Bing, and Reddit searches...\n")
     final_state = await graph.ainvoke(initial_state) 
 
     if final_state.get("final_answer"):
-        print(f"\nFinal Answer:\n{final_state.get('final_answer')}\n")
+        log(f"\nFinal Answer:\n{final_state.get('final_answer')}\n")
         return final_state.get('final_answer')
-    print("-" * 80)
+    log("-" * 80)
 

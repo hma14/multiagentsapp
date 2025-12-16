@@ -6,7 +6,6 @@ import SpinningLogo from "./Components/SpinningLogo";
 import {
   Container,
   TextField,
-  Button,
   Card,
   CardContent,
   Typography,
@@ -14,6 +13,8 @@ import {
   Accordion,
   AccordionSummary,
   AccordionDetails,
+  /*   
+  Button,
   Table,
   TableBody,
   TableCell,
@@ -21,8 +22,9 @@ import {
   TableHead,
   TableRow,
   TablePagination,
-  Pagination,
   Paper,
+ */
+  Pagination,
   CircularProgress,
   IconButton,
 } from "@mui/material";
@@ -32,8 +34,8 @@ import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import dayjs from "dayjs";
 import "./App.css";
 
-//const url = "http://localhost:8000";
-const url = "http://agent-back.lottotry.com:8000";
+const url = "http://localhost:8000";
+//const url = "http://agent-back.lottotry.com:8000";
 
 function App() {
   const [prompt, setPrompt] = useState("");

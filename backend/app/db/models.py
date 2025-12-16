@@ -6,4 +6,4 @@ class PromptResult(SQLModel, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
     prompt: str
     results: str
-    createdAt: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), nullable=False)
+    createdAt: datetime = Field(default_factory=lambda: datetime.now(), nullable=False)

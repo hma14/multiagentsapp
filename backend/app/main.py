@@ -8,9 +8,17 @@ from agents.ai_agents.ai_agent_search import run_chatbot
 from contextlib import asynccontextmanager
 from clients import client
 import httpx
+import os
 
+# -----------------------------------------------
+#  Logging helper
+# -----------------------------------------------
+def log(message: str) -> None:
+    print(f"[STARTUP] {message}")
+
+    
 @asynccontextmanager
-async def app_lifespan(app: FastAPI):
+async def lifespan(app: FastAPI):
     
     timeout = httpx.Timeout(
         connect=5,
@@ -18,18 +26,35 @@ async def app_lifespan(app: FastAPI):
         write=10,
         pool=5,
     )
-    # startup
+    
+    # ─── STARTUP ─────────────────────────────
+    ENV = os.getenv("ENV", "development") 
+    
+    if ENV != "production":
+        SQLModel.metadata.create_all(engine)
+        log(f"EVN={ENV} - database tables created")        
+    else:
+        log(f"ENV={ENV} - skipping database creation")  
+
     app.state.http = httpx.AsyncClient(
-        timeout=httpx.Timeout(timeout=timeout)
+        timeout=httpx.Timeout(timeout)
     )
+    log("HTTP client created")
 
-    yield  # 👈 app is running
+    try:
+        yield
+    finally:
+        # ─── SHUTDOWN ─────────────────────────
+        await app.state.http.aclose()
+        log("HTTP client closed")
+        log("App shutting down")
+        
+app = FastAPI(lifespan=lifespan)
 
-    # shutdown
-    await app.state.http.aclose()
 
-app = FastAPI(lifespan=app_lifespan)
-
+@app.get("/")
+def health():
+    return {"status": "ok"}
 
 
 # Allow frontend (localhost:3000) to talk to backend (localhost:8000)
@@ -44,15 +69,6 @@ app.add_middleware(
 async def shutdown():
     await client.aclose()
 
-# Create DB tables on startup    
-@asynccontextmanager
-async def lifespan(app: FastAPI):
-    # Startup code
-    SQLModel.metadata.create_all(engine)
-    print("Database tables created")
-    yield
-    # Optional shutdown code
-    print("App shutting down")
 
 @app.post("/api/query")
 async def query_agents(prompt: str, session: Session = Depends(get_session)):

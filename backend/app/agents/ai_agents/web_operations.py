@@ -22,19 +22,21 @@ from typing import Any, Dict
 import httpx
 
 # -----------------------------------------------
+#  Logging helper
+# -----------------------------------------------
+def log(message: str) -> None:
+    print(f"[API] {message}")
+
+
+# -----------------------------------------------
 #  Pydantic Response Model
 # -----------------------------------------------
 class ApiResponse(BaseModel):
     knowledge: Dict[str, Any] = Field(default_factory=dict)
     organic: list = Field(default_factory=list)
     
-# -----------------------------------------------
-#  Logging helper
-# -----------------------------------------------
-def log(message: str) -> None:
-    print(f"[API] {message}")
     
-    # -----------------------------------------------
+# -----------------------------------------------
 #  Unified JSON / HTML parsing
 # -----------------------------------------------
 def parse_response_text(text: str) -> Dict[str, Any]:

@@ -25,3 +25,24 @@ yarn dev
 yarn build
 
 @Check your frontend package.json → "scripts" section to see available commands.
+
+@alembic for prod deploy
+
+<!--
+if any database table changes run below
+This:
+adds the column
+preserves data
+works across environments
+is repeatable and auditable
+
+Development
+if ENV != "production":
+    SQLModel.metadata.create_all(engine)
+
+Production
+alembic upgrade head  -> run in PS
+ -->
+
+alembic revision --autogenerate -m "add email to user"
+alembic upgrade head
