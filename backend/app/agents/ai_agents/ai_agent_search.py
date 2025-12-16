@@ -34,7 +34,7 @@ llm = init_chat_model(
 #  Logging helper
 # -----------------------------------------------
 def log(message: str) -> None:
-    log(f"[AGENT SEARCH] {message}")
+    print(f"[AGENT SEARCH] {message}")
 
 
 class State(TypedDict):
@@ -88,7 +88,7 @@ async def reddit_search(state: State):
     log(f"Searching Reddit for: {user_question}")
 
     reddit_results = await reddit_search_api(keyword=user_question)
-    log(reddit_results)
+    print(reddit_results)
 
     return {"reddit_results": reddit_results}
 
@@ -115,7 +115,7 @@ async def analyze_reddit_posts(state: State):
             log(f"   {i}. {url}")
 
     except Exception as e:
-        log(e)
+        print(e)
         selected_urls = []
 
     return {"selected_reddit_urls": selected_urls}
@@ -139,7 +139,7 @@ async def retrieve_reddit_posts(state: State):
         log("Failed to get post data")
         reddit_post_data = []
 
-    log(reddit_post_data)
+    print(reddit_post_data)
     return {"reddit_post_data": reddit_post_data}
 
 

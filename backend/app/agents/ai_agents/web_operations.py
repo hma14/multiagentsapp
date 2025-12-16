@@ -1,6 +1,7 @@
 from dotenv import load_dotenv
 import os
 import json
+from fastapi import FastAPI
 import requests
 from urllib.parse import quote_plus
 from .snapshot_operations import download_snapshot, poll_snapshot_status
@@ -65,6 +66,7 @@ async def _make_api_request(
     url: str,
     engine: str,
     **kwargs: Any, 
+   
 ) -> Dict[str, Any]:
     """Make an async HTTP POST request and always return a dict."""
 
@@ -77,6 +79,10 @@ async def _make_api_request(
     
     # Exponential backoff schedule
     backoff_delays = [0.5, 1.0, 2.0]  # seconds
+    
+   
+    if client is None:
+        raise RuntimeError("HTTP client not initialized")
     
     # Simple retry logic (3 attempts)
     for attempt in range(len(backoff_delays) + 1):
