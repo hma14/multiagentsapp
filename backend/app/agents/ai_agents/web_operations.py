@@ -11,7 +11,7 @@ import httpx
 import contextlib
 from pydantic import BaseModel, Field, ValidationError
 import time
-from clients import client
+import clients
 
 load_dotenv(override=True)
 
@@ -81,14 +81,14 @@ async def _make_api_request(
     backoff_delays = [0.5, 1.0, 2.0]  # seconds
     
    
-    if client is None:
+    if clients.client is None:
         raise RuntimeError("HTTP client not initialized")
     
     # Simple retry logic (3 attempts)
     for attempt in range(len(backoff_delays) + 1):
         try:
             log(f"Sending request to {engine} (Attempt {attempt + 1})")
-            response = await client.post(url, headers=headers, **kwargs)
+            response = await clients.client.post(url, headers=headers, **kwargs)
             response.raise_for_status()
 
             text = response.text

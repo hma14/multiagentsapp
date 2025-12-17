@@ -6,9 +6,9 @@ from agents.agent_manager import run_agents
 from fastapi.middleware.cors import CORSMiddleware
 from agents.ai_agents.ai_agent_search import run_chatbot
 from contextlib import asynccontextmanager
-from clients import client as http_client
-import httpx
+import clients
 import os
+import httpx
 
 # -----------------------------------------------
 #  Logging helper
@@ -36,8 +36,8 @@ async def lifespan(app: FastAPI):
     else:
         log(f"ENV={ENV} - skipping database creation")  
 
-    http_client = httpx.AsyncClient(timeout=timeout)
-    app.state.http = http_client
+    clients.client = httpx.AsyncClient(timeout=timeout)
+    app.state.http = clients.client
     
     log("HTTP client created")
 
@@ -45,7 +45,7 @@ async def lifespan(app: FastAPI):
         yield
     finally:
         # ─── SHUTDOWN ─────────────────────────
-        await http_client.aclose()
+        await clients.client.aclose()
         log("HTTP client closed")
         log("App shutting down")
         
