@@ -66,7 +66,8 @@ app.add_middleware(
 )
 
 async def shutdown():
-    await http_client.aclose()
+    if clients.client is not None:
+        await clients.client.aclose()
 
 
 @app.post("/api/query")
